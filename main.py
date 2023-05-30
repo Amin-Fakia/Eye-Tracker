@@ -10,15 +10,26 @@ from RangeDial import RangeDial
 # Subclass QMainWindow to customize your application's main window
 class MainWindow(QMainWindow):
     filepath = "/data/"
+
+
     
+    @pyqtSlot(tuple)
+    def updateMsg(self, msg):
+        self.errorMsg = msg[0]
+        self.errorBox.setText(self.errorMsg)
+        self.errorBox.setStyleSheet(f"color: {msg[1]}")
+
     def __init__(self):
         super().__init__()
+        self.errorMsg = ""
         #self.detector = cv2.SimpleBlobDetector_create()
         self.threadpool = QThreadPool()
-        print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
+        self.errorMsg = f"Multithreading with maximum {self.threadpool.maxThreadCount()} threads"
         self.videoThread = VideoThread()
         self.audioThread = MicrophoneRecorder(12000)
         self.serielThread = SerielReceiver(com_port="COM7")
+
+        
 
         self.data = {}
         self.tableView = TableView(self.data)
@@ -41,9 +52,10 @@ class MainWindow(QMainWindow):
         tabs = QTabWidget()
         tabs.setMaximumHeight(300)
 
-        slider1 =  QSlider()
+        #slider1 =  QSlider()
 
-        
+ 
+
         controlFrame = QFrame()
         controlLayout = QHBoxLayout()
         self.area_box =RangeBox("Area","Minimum Area: ","Maximum Area:",(1,10000),(1,10000)) # [2].value()
@@ -104,7 +116,7 @@ class MainWindow(QMainWindow):
 
         imageProcessingFrame.layout().addWidget(contourLabel,1,0)
         imageProcessingLayout.addWidget(contourSlider,1,1)
-        imageProcessingLayout.addWidget(rotateBtn,2,0)
+        imageProcessingLayout.addWidget(rotateBtn,2,0) 
         
 
         pg.setConfigOption('background', 'w')
@@ -164,10 +176,31 @@ class MainWindow(QMainWindow):
         inputBox.addWidget(self.patientInput)
 
         inputFrame = QFrame()
+        inputFrame.setMaximumHeight(100)
         inputFrame.setLayout(inputBox)
 
 
-        analysisLayout.addWidget(inputFrame)
+        analysisLayout.addWidget(inputFrame,1,)
+
+
+        # Error Frame
+
+        
+        
+        self.errorBox = QLabel(self.errorMsg)
+        #
+        # errorBox.setStyleSheet("color: red;")
+
+        errorFrame = QFrame()
+        errorFrame.setObjectName("errorFrame")
+        errorFrame.setFixedHeight(35)
+        errorFrame.setStyleSheet("#errorFrame { border-top: 1px solid black;}")
+        errorBoxLayout = QVBoxLayout()
+        errorBoxLayout.addWidget(self.errorBox)
+        errorFrame.setLayout(errorBoxLayout)
+
+        
+
 
         
         analysisFrame.setMinimumWidth(250)
@@ -230,6 +263,9 @@ class MainWindow(QMainWindow):
 
         self.mainLayout.addWidget(analysisFrame, 0, 2,2,1)
         self.mainLayout.addWidget(tabs, 1, 0,1,2)
+        self.mainLayout.addWidget(errorFrame, 2, 0,1,3)
+
+
         
         
 
@@ -252,6 +288,9 @@ class MainWindow(QMainWindow):
         self.videoThread.keypoints.connect(self.update_plot)
         self.videoThread.blink_count.connect(self.update_blink_count)
         self.serielThread.serielData.connect(self.update_pulse)
+
+
+        self.audioThread.eval_msg.connect(self.updateMsg)
         
         # start the thread
         self.videoThread.start()
@@ -289,6 +328,7 @@ class MainWindow(QMainWindow):
         self.timeLabel.setText("Recording Time : " + self.time.toString("hh:mm:ss"))
         self.createFolder()
         self.isRecording = True
+        
 
         self.audioThread.start_recording()
         self.audioThread.voice_data.connect(self.update_voice_recorder)

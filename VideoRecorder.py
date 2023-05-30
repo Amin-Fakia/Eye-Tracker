@@ -23,7 +23,7 @@ class VideoThread(QThread):
         super(VideoThread,self).__init__()
         self._isRunning = True
         #model = load_model("./NN/eyecloseopen.h5")
-        self.lmodel =  LiteModel.from_file("./NN/model.tflite")#LiteModel.from_keras_model(model) 
+        # self.lmodel =  LiteModel.from_file("./NN/model.tflite")#LiteModel.from_keras_model(model) 
 
     def toggleRecording(self,filename="test"):
         

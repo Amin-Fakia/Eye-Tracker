@@ -3,6 +3,7 @@ from libraries_import import *
 ##  TODO: FIX !VERY IMPORTANT! The voice data are buffered in memory (OOM Exception), find workaround.
 class MicrophoneRecorder(QThread):
     voice_data = pyqtSignal(object)
+    eval_msg = pyqtSignal(tuple)
     def __init__(self, rate=4000, chunksize=1024):
         super(MicrophoneRecorder, self).__init__()
         self.rate = rate
@@ -17,7 +18,9 @@ class MicrophoneRecorder(QThread):
         self.lock = threading.Lock()
         self.stop = False
         self.frames = []
-        print("MicrophoneRecorder initialized")
+        
+        self.eval_msg.emit(("MicrophoneRecorder initialized","red"))
+        
         #atexit.register(self.stop_recording)
 
     def new_frame(self, data, frame_count, time_info, status):
@@ -52,10 +55,13 @@ class MicrophoneRecorder(QThread):
         
     def save_file(self,filename="test"):
         frames = self.get_frames()
-        wf = wave.open("./data/" +filename+ "/Audio/"+ filename+".wav", 'wb')
-        wf.setnchannels(1)
-        wf.setsampwidth(self.p.get_sample_size(pyaudio.paInt16))
-        wf.setframerate(self.rate)
-        wf.writeframes(b''.join(frames))
-        wf.close()
-        print("saved")
+        try:
+            wf = wave.open("./data/" +filename+ "/Audio/"+ filename+".wav", 'wb')
+            wf.setnchannels(1)
+            wf.setsampwidth(self.p.get_sample_size(pyaudio.paInt16))
+            wf.setframerate(self.rate)
+            wf.writeframes(b''.join(frames))
+            wf.close()
+            self.eval_msg.emit(("saved sound file","green"))
+        except Exception as e:
+            self.eval_msg.emit((e,"green"))
