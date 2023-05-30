@@ -1,0 +1,15 @@
+numpy==1.15.1
+numpy==1.21.5
+numpy==1.23.5
+numpy==1.24.2
+opencv_contrib_python==4.7.0.72
+opencv_python==4.7.0.72
+PyAudio==0.2.13
+PyQt5_sip==12.11.0
+pyqtgraph==0.13.1
+pyserial==3.5
+tensorflow==2.9.1
+tensorflow==2.10.0
+tensorflow==2.11.0
+tensorflow_intel==2.11.0
+~pencv_python_headless==4.7.0.72

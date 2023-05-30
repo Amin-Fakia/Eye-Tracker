@@ -3,160 +3,14 @@ from TableView import TableView
 from VideoRecorder import VideoThread
 from MicrophoneRecorder import MicrophoneRecorder
 from SerialReceiver import SerielReceiver
+from RangeBox import RangeBox
+from RangeDial import RangeDial
 
 
 # Subclass QMainWindow to customize your application's main window
 class MainWindow(QMainWindow):
     filepath = "/data/"
-    def range_box(self,box_name=None,label1=None,label2=None,label1_value=(0,100),label2_value=(0,100),active=True):
-        Layout = QVBoxLayout()
-        Box = QGroupBox()
-        Box.setTitle(box_name)
-        Box.setLayout(Layout)
-        Box.setCheckable(active)
-        Layout.addWidget(QLabel(label1))
-        valueMin = QSpinBox()
-        valueMin.setRange(label1_value[0],label1_value[1])
-        Layout.addWidget(valueMin)
-        Layout.addWidget(QLabel(label2))
-        valueMax = QSpinBox()
-        valueMax.setRange(label2_value[0],label2_value[1])
-        Layout.addWidget(valueMax)
-
-        return Box
     
-    def range_dial(self,dial_name=None,label_value=(0,100)):
-        Layout = QVBoxLayout()
-        Box = QGroupBox()
-        Box.setTitle(dial_name)
-        Box.setLayout(Layout)
-        Box.setCheckable(True)
-        
-        dial = QDial()
-        dial.setRange(label_value[0],label_value[1])
-     
-        Layout.addWidget(dial)
-        range_dial_label = QLabel()
-        range_dial_label.setText(f"Value : "+ str(dial.value()))
-        dial.valueChanged.connect(lambda: self.update(dial.value(),range_dial_label))
-        Layout.addWidget(range_dial_label)
-        
-        return Box
-
-
-    def update(self, value,label):
-        label.setText(f'Value : {value}')
-        
-    def playTick(self):
-        self.time = self.time.addSecs(1)
-        self.timeLabel.setText("Recording Time : " + self.time.toString("hh:mm:ss"))
-        
-
-    @pyqtSlot(tuple)
-    def saveData(self,data):
-        # lock = threading.Lock()
-        # while self.isRecording:
-        #     # with lock:
-
-        with open("./data/"+self.patientInput.text()+"/"+self.patientInput.text()+"_"+self.filename,'a+') as f:
-            writer = csv.DictWriter(f,fieldnames=["Pupil Diameter (relative)","time","XY-Position","Heart Rate (BPM)","Blinks"],delimiter=",",lineterminator="\n")
-            #[d.size for d in data], next(iter([d.size for d in data]), "None")
-            data_object = {"time":datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                           "Pupil Diameter (relative)":[self.pupil_radius_],
-                           "XY-Position": data[0],
-                           "Heart Rate (BPM)": self.pulse_data[-1],
-                           "Blinks": self.blink_count,
-                           }
-            if f.tell() == 0:
-                writer.writeheader()
-                print("file doesnt exist, creating file with name: " + self.filename)
-            writer.writerow(data_object)
-
-
-
-
-    def createFolder(self):
-        self.folder_path = f'./data/{self.patientInput.text()}'
-        if not os.path.exists(self.folder_path):
-            os.mkdir(self.folder_path)
-            os.mkdir(self.folder_path+"/Audio")
-            os.mkdir(self.folder_path+"/Video")
-                
-
-
-    def play(self):
-        # now = datetime.datetime.now()
-        # self.time = QTime(now.hour,now.minute,now.second)
-        self.timeLabel.setText("Recording Time : " + self.time.toString("hh:mm:ss"))
-        self.createFolder()
-        self.isRecording = True
-
-        self.audioThread.start_recording()
-        self.audioThread.voice_data.connect(self.update_voice_recorder)
-        
-
-        self.videoThread.keypoints.connect(self.saveData)
-        self.videoThread.toggleRecording(self.patientInput.text())
-        
-
-        self.playTimer.start(1000)
-        self.playBtn.setDisabled(True)
-        self.stopBtn.setEnabled(True)
-    def stop(self):
-        self.playTimer.stop()
-        self.videoThread.toggleRecording(self.patientInput.text())
-        self.videoThread.keypoints.disconnect(self.saveData)
-        self.audioThread.voice_data.disconnect(self.update_voice_recorder)
-        
-        self.audioThread.stop_recording()
-        self.audioThread.save_file(filename=self.patientInput.text())
-        self.timeLabel.setText("Recording Time : " + self.time.toString("hh:mm:ss"))
-        self.time = QTime(0,0,0)
-        #print("Stopped at : " + self.time.toString("hh:mm:ss"))
-        self.playBtn.setDisabled(False)
-        self.stopBtn.setDisabled(True)
-        # self.popUp = MyPopup()
-        # self.popUp.setGeometry(QRect(100, 100, 300, 100))
-        # self.popUp.show()
-    
-    def apply_params(self):
-        params = cv2.SimpleBlobDetector_Params()
-        params.filterByArea = self.area_box.isChecked()
-        params.minArea = int(self.area_box.children()[2].value())
-        params.maxArea = int(self.area_box.children()[4].value())
-
-        params.filterByCircularity = self.circul_dial.isChecked()
-        params.minCircularity = self.circul_dial.children()[1].value()/100
-
-
-        params.filterByConvexity = self.convex_dial.isChecked()
-        params.minConvexity=self.convex_dial.children()[1].value()/100
-
-        params.filterByInertia = self.inertia_dial.isChecked()
-        params.minInertiaRatio = self.inertia_dial.children()[1].value()/100
-
-        params.minThreshold = int(self.threshold_box.children()[2].value())
-        params.maxThreshold = int(self.threshold_box.children()[4].value())
-
-        self.videoThread.update_detector(params)
-        # self.thread.blur = True
-        # self.thread.kernel_size = (11,11)
-
-
-        #self.detector = cv2.SimpleBlobDetector_create(parameters=params)
-    def initialize_gui(self):
-        self.area_box.setChecked(True)
-        self.area_box.children()[2].setValue(500)
-        self.area_box.children()[4].setValue(5000)
-        self.threshold_box.children()[4].setValue(120)
-        self.threshold_box.children()[2].setValue(0)
-        self.circul_dial.children()[1].setValue(25)
-        self.convex_dial.setChecked(False)
-        self.inertia_dial.setChecked(False)
-
-        self.apply_params()
-        
-
     def __init__(self):
         super().__init__()
         #self.detector = cv2.SimpleBlobDetector_create()
@@ -192,12 +46,11 @@ class MainWindow(QMainWindow):
         
         controlFrame = QFrame()
         controlLayout = QHBoxLayout()
-        self.area_box =self.range_box("Area","Minimum Area: ","Maximum Area:",(1,10000),(1,10000)) # [2].value()
-        
-        self.threshold_box =self.range_box("Threshold","Minimum Threshold: ","Maximum Threshold:",(0,255),(0,255),False)
-        self.circul_dial = self.range_dial("Circularity",(1,100))
-        self.convex_dial = self.range_dial("Convexity",(1,100))
-        self.inertia_dial = self.range_dial("Inertia",(1,100))
+        self.area_box =RangeBox("Area","Minimum Area: ","Maximum Area:",(1,10000),(1,10000)) # [2].value()
+        self.threshold_box =RangeBox("Threshold","Minimum Threshold: ","Maximum Threshold:",(0,255),(0,255),False)
+        self.circul_dial = RangeDial("Circularity",(1,100))
+        self.convex_dial = RangeDial("Convexity",(1,100))
+        self.inertia_dial = RangeDial("Inertia",(1,100))
 
 
 
@@ -310,11 +163,10 @@ class MainWindow(QMainWindow):
         inputBox.addWidget(patientLabel)
         inputBox.addWidget(self.patientInput)
 
-
         inputFrame = QFrame()
         inputFrame.setLayout(inputBox)
 
-        
+
         analysisLayout.addWidget(inputFrame)
 
         
@@ -419,15 +271,128 @@ class MainWindow(QMainWindow):
    
         self.pulse_data = [0]
         self.pulse_timestamps = []
+    
+    
+
+    def createFolder(self):
+        self.folder_path = f'./data/{self.patientInput.text()}'
+        if not os.path.exists(self.folder_path):
+            os.mkdir(self.folder_path)
+            os.mkdir(self.folder_path+"/Audio")
+            os.mkdir(self.folder_path+"/Video")
+                
+
+
+    def play(self):
+        # now = datetime.datetime.now()
+        # self.time = QTime(now.hour,now.minute,now.second)
+        self.timeLabel.setText("Recording Time : " + self.time.toString("hh:mm:ss"))
+        self.createFolder()
+        self.isRecording = True
+
+        self.audioThread.start_recording()
+        self.audioThread.voice_data.connect(self.update_voice_recorder)
+        
+
+        self.videoThread.keypoints.connect(self.saveData)
+        self.videoThread.toggleRecording(self.patientInput.text())
+        
+
+        self.playTimer.start(1000)
+        self.playBtn.setDisabled(True)
+        self.stopBtn.setEnabled(True)
+    def stop(self):
+        self.playTimer.stop()
+        self.videoThread.toggleRecording(self.patientInput.text())
+        self.videoThread.keypoints.disconnect(self.saveData)
+        self.audioThread.voice_data.disconnect(self.update_voice_recorder)
+        
+        self.audioThread.stop_recording()
+        self.audioThread.save_file(filename=self.patientInput.text())
+        self.timeLabel.setText("Recording Time : " + self.time.toString("hh:mm:ss"))
+        self.time = QTime(0,0,0)
+        #print("Stopped at : " + self.time.toString("hh:mm:ss"))
+        self.playBtn.setDisabled(False)
+        self.stopBtn.setDisabled(True)
+        # self.popUp = MyPopup()
+        # self.popUp.setGeometry(QRect(100, 100, 300, 100))
+        # self.popUp.show()
+    
+    def apply_params(self):
+        params = cv2.SimpleBlobDetector_Params()
+        params.filterByArea = self.area_box.isChecked()
+        params.minArea = int(self.area_box.children()[2].value())
+        params.maxArea = int(self.area_box.children()[4].value())
+
+        params.filterByCircularity = self.circul_dial.isChecked()
+        params.minCircularity = self.circul_dial.children()[1].value()/100
+
+
+        params.filterByConvexity = self.convex_dial.isChecked()
+        params.minConvexity=self.convex_dial.children()[1].value()/100
+
+        params.filterByInertia = self.inertia_dial.isChecked()
+        params.minInertiaRatio = self.inertia_dial.children()[1].value()/100
+
+        params.minThreshold = int(self.threshold_box.children()[2].value())
+        params.maxThreshold = int(self.threshold_box.children()[4].value())
+
+        self.videoThread.update_detector(params)
+        # self.thread.blur = True
+        # self.thread.kernel_size = (11,11)
+
+
+        #self.detector = cv2.SimpleBlobDetector_create(parameters=params)
+    def initialize_gui(self):
+        self.area_box.setChecked(True)
+        self.area_box.children()[2].setValue(500)
+        self.area_box.children()[4].setValue(5000)
+        self.threshold_box.children()[4].setValue(120)
+        self.threshold_box.children()[2].setValue(0)
+        self.circul_dial.children()[1].setValue(25)
+        self.convex_dial.setChecked(False)
+        self.inertia_dial.setChecked(False)
+
+        self.apply_params()
+        
+    def playTick(self):
+        self.time = self.time.addSecs(1)
+        self.timeLabel.setText("Recording Time : " + self.time.toString("hh:mm:ss"))    
 
     def retryConnection(self):
         self.videoThread.start()
+        # @pyqtSlot(tuple)
+    def calibrate(self):
+        #for d in data:
+        self.pupil_radius = self.pupil_radius_
+    def calculate_perimeter(self,a,b):
+        perimeter = math.pi * ( 3*(a+b) - math.sqrt( (3*a + b) * (a + 3*b) ) )
+        return perimeter
+
+    
+    @pyqtSlot(tuple)
+    def saveData(self,data):
+        # lock = threading.Lock()
+        # while self.isRecording:
+        #     # with lock:
+        with open("./data/"+self.patientInput.text()+"/"+self.patientInput.text()+"_"+self.filename,'a+') as f:
+            writer = csv.DictWriter(f,fieldnames=["Pupil Diameter (relative)","time","XY-Position","Heart Rate (BPM)","Blinks"],delimiter=",",lineterminator="\n")
+            #[d.size for d in data], next(iter([d.size for d in data]), "None")
+            data_object = {"time":datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                           "Pupil Diameter (relative)":[self.pupil_radius_],
+                           "XY-Position": data[0],
+                           "Heart Rate (BPM)": self.pulse_data[-1],
+                           "Blinks": self.blink_count,
+                           }
+            if f.tell() == 0:
+                writer.writeheader()
+                print("file doesnt exist, creating file with name: " + self.filename)
+            writer.writerow(data_object)
 
     @pyqtSlot(int)
     def update_blink_count(self,blink_count):
         self.tableWidget.setItem(4,0,QTableWidgetItem(f"{blink_count}"))
 
-        
         
     @pyqtSlot(list)
     def update_pulse(self,data):
@@ -442,8 +407,6 @@ class MainWindow(QMainWindow):
         self.tableWidget.setItem(3,0,QTableWidgetItem(f"{data[1]}"))
         
 
-
-
     @pyqtSlot(object)
     def update_voice_recorder(self,data):
         #print(data)
@@ -455,7 +418,6 @@ class MainWindow(QMainWindow):
         try:
             self.plot.setData(self.time_stamps,[r/self.pupil_radius for r in self.r])
         except: pass
-        
         
 
     @pyqtSlot(tuple)
@@ -469,27 +431,6 @@ class MainWindow(QMainWindow):
         # self.plot.clear()
         self.time_stamps.append(self.idx)
         self.scatter.setData(self.dataX, self.dataY)
-        #self.dataX.append(self.pupil_radius_)
-        # for d in data:
-        #     # self.dataX.append(d.pt[0])
-        #     # self.dataY.append(d.pt[1])
-        #     # self.r.append(d.size)
-        #     self.dataX.append(d[0][0])
-        #     self.dataY.append(d[0][1])
-        #     self.r.append(d.size)
-            
-        #     self.scatter.setData(self.dataX, self.dataY)
-        #     if len(self.dataX) > 50:
-        #         self.dataX.pop(0)
-        #         self.dataY.pop(0)
-        #         self.r.pop(0)
-                
-                # self.time_stamps.pop(0)
-            
-    # @pyqtSlot(tuple)
-    def calibrate(self):
-        #for d in data:
-        self.pupil_radius = self.pupil_radius_
 
     @pyqtSlot(tuple)
     def update_data(self, data):
@@ -514,34 +455,9 @@ class MainWindow(QMainWindow):
             self.dataX.pop(0)
             self.dataY.pop(0)
             self.r.pop(0)
-
         xys.append((x,y))
-        # for idx,d in enumerate(data):
-        #     print(d)
-        #     #(x,y) = d.pt
-        #     (x,y) = d[0]
+     
 
-        #     #self.pupil_radius_ = d.size
-        #     self.pupil_radius_ = np.pi * d[1][0] * d[1][1]
-        #     self.tableWidget.setItem(0,0,QTableWidgetItem(str(round(x,3))))
-        #     self.tableWidget.setItem(1,0,QTableWidgetItem(str(round(y,3))))
-        #     self.tableWidget.setItem(2,0,QTableWidgetItem(f"{(self.pupil_radius_/self.pupil_radius)*100:.1f}"))
-            
-        #     self.dataX.append(x)
-        #     self.dataY.append(y)
-        #     self.r.append(self.pupil_radius_)
-        #     if len(self.dataX) > 50:
-        #         self.dataX.pop(0)
-        #         self.dataY.pop(0)
-        #         self.r.pop(0)
-
-        #     xys.append((x,y))
-        
-        #print(xys)
-
-    def calculate_perimeter(self,a,b):
-        perimeter = math.pi * ( 3*(a+b) - math.sqrt( (3*a + b) * (a + 3*b) ) )
-        return perimeter
 
 
     @pyqtSlot(np.ndarray)
