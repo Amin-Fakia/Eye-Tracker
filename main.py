@@ -262,7 +262,7 @@ class MainWindow(QMainWindow):
         self.pupil_radius = 1
         self.pupil_radius_ = 0
 
-        self.initialize_gui()
+        
        
         # connect its signal to the update_image slot
         self.videoThread.change_pixmap_signal.connect(self.update_image)
@@ -283,6 +283,8 @@ class MainWindow(QMainWindow):
         
         self.pulse_data = [0]
         self.pulse_timestamps = []
+
+        #self.initialize_gui()
     
     
 
@@ -365,7 +367,6 @@ class MainWindow(QMainWindow):
         self.circul_dial.children()[1].setValue(25)
         self.convex_dial.setChecked(False)
         self.inertia_dial.setChecked(False)
-
         self.apply_params()
         
     def playTick(self):
