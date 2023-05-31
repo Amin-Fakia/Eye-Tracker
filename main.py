@@ -1,23 +1,10 @@
 from libraries_import import *
-from TableView import TableView
-from VideoRecorder import VideoThread
-from MicrophoneRecorder import MicrophoneRecorder
-from SerialReceiver import SerielReceiver
-from RangeBox import RangeBox
-from RangeDial import RangeDial
-
+from API import *
+from UI import *
 
 # Subclass QMainWindow to customize your application's main window
 class MainWindow(QMainWindow):
     filepath = "/data/"
-
-
-    
-    @pyqtSlot(tuple)
-    def updateMsg(self, msg):
-        self.errorMsg = msg[0]
-        self.errorBox.setText(self.errorMsg)
-        self.errorBox.setStyleSheet(f"color: {msg[1]}")
 
     def __init__(self):
         super().__init__()
@@ -27,7 +14,7 @@ class MainWindow(QMainWindow):
         self.errorMsg = f"Multithreading with maximum {self.threadpool.maxThreadCount()} threads"
         self.videoThread = VideoThread()
         self.audioThread = MicrophoneRecorder(12000)
-        self.serielThread = SerielReceiver(com_port="COM7")
+        self.serielThread = SerialReceiver(com_port="COM7")
 
         
 
@@ -299,13 +286,13 @@ class MainWindow(QMainWindow):
         # self.audioThread.voice_data.connect(self.update_voice_recorder)
         
   
-        try:
-            self.videoThread.start()
-        except:
-            self.videoThread.stop()
-            retryBtn = QPushButton("Retry Connection")
-            retryBtn.clicked.connect(self.retryConnection)
-            self.mainLayout.addWidget(retryBtn, 0, 0)
+        # try:
+        #     self.videoThread.start()
+        # except:
+        #     self.videoThread.stop()
+        #     retryBtn = QPushButton("Retry Connection")
+        #     retryBtn.clicked.connect(self.retryConnection)
+        #     self.mainLayout.addWidget(retryBtn, 0, 0)
 
    
         self.pulse_data = [0]
@@ -325,8 +312,8 @@ class MainWindow(QMainWindow):
     def play(self):
         # now = datetime.datetime.now()
         # self.time = QTime(now.hour,now.minute,now.second)
-        self.timeLabel.setText("Recording Time : " + self.time.toString("hh:mm:ss"))
         self.createFolder()
+        self.timeLabel.setText("Recording Time : " + self.time.toString("hh:mm:ss"))
         self.isRecording = True
         
 
@@ -409,7 +396,12 @@ class MainWindow(QMainWindow):
         perimeter = math.pi * ( 3*(a+b) - math.sqrt( (3*a + b) * (a + 3*b) ) )
         return perimeter
 
-    
+    @pyqtSlot(tuple)
+    def updateMsg(self, msg):
+        self.errorMsg = msg[0]
+        self.errorBox.setText(self.errorMsg)
+        self.errorBox.setStyleSheet(f"color: {msg[1]}")
+
     @pyqtSlot(tuple)
     def saveData(self,data):
         # lock = threading.Lock()
@@ -498,8 +490,6 @@ class MainWindow(QMainWindow):
         xys.append((x,y))
      
 
-
-
     @pyqtSlot(np.ndarray)
     def update_image(self, cv_img):
         """Updates the image_label with a new opencv image"""
@@ -517,9 +507,10 @@ class MainWindow(QMainWindow):
         return QPixmap.fromImage(p)
      
 
-app = QApplication(sys.argv)
+if __name__ == "__main__":
+        
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
 
-window = MainWindow()
-window.show()
-
-app.exec()
+    app.exec()
