@@ -131,7 +131,7 @@ class MainWindow(QMainWindow):
         self.time_stamps = []
 
 
-        tabs.addTab(controlFrame, "Blob Detection Parameters")
+        #tabs.addTab(controlFrame, "Blob Detection Parameters")
         tabs.addTab(self.graph, "Pupil Diameter Plot")
         tabs.addTab(self.scatter_graph, "Pupil Position Plot")
         tabs.addTab(imageProcessingFrame, "Image Processing")
@@ -229,8 +229,8 @@ class MainWindow(QMainWindow):
 
         infoBox = QGroupBox()
         self.tableWidget = QTableWidget()
-        self.tableWidget.setColumnCount(2)
-        self.tableWidget.setHorizontalHeaderLabels(["Camera 1","Camera 2"])
+        self.tableWidget.setColumnCount(1)
+        self.tableWidget.setHorizontalHeaderLabels(["Camera 1"])
         self.tableWidget.setRowCount(5)
         self.tableWidget.setVerticalHeaderLabels(["X","Y","Pupil Radius Change (%)","Heart Rate (BPM)","Blinks"])
 
