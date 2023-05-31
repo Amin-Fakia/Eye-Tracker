@@ -15,7 +15,6 @@ import pyqtgraph as pg
 import numpy as np
 
 import datetime
-# from pyqt_label_slider.labelSlider import LabelSlider
 import time
 
 import threading
