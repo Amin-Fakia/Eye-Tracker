@@ -5,108 +5,107 @@ from UI import *
 # Subclass QMainWindow to customize your application's main window
 class MainWindow(QMainWindow):
     filepath = "/data/"
-
+    pg.setConfigOption('background', 'w')
     def __init__(self):
         super().__init__()
-        self.errorMsg = ""
-        #self.detector = cv2.SimpleBlobDetector_create()
+        self.setWindowTitle("Eye Tracker")
+        self.setWindowIcon(QIcon("./Icons/Eye_Tracker_Icon.png"))
+        self.setMinimumWidth(1200)
+        self.setMinimumHeight(700)
+
+        ## Initialize Threads ##
         self.threadpool = QThreadPool()
-        self.errorMsg = f"Multithreading with maximum {self.threadpool.maxThreadCount()} threads"
         self.videoThread = VideoThread()
         self.audioThread = MicrophoneRecorder(12000)
         self.serielThread = SerialReceiver(com_port="COM7")
 
         
-
+        self.errorMsg = f"Multithreading with maximum {self.threadpool.maxThreadCount()} threads"
         self.data = {}
         self.tableView = TableView(self.data)
         self.filename = f"data_{datetime.datetime.now().year}_{datetime.datetime.now().month}_{datetime.datetime.now().day}.csv"
-        self.setWindowTitle("Eye Tracker")
-        self.setWindowIcon(QIcon("./Icons/Eye_Tracker_Icon.png"))
-        self.setMinimumWidth(1200)
-        self.setMinimumHeight(700)
-        self.playTimer = QTimer()
-        
-        self.time = QTime(0,0,0)
-        self.playTimer.timeout.connect(self.playTick)
-
-
-        self.mainLayout = QGridLayout()
-
-      
         self.blink_count = 0
-
+        self.playTimer = QTimer()
+        self.time = QTime(0,0,0)
+        self.mainLayout = QGridLayout()
         tabs = QTabWidget()
+        
         tabs.setMaximumHeight(300)
 
-        #slider1 =  QSlider()
+        self.playTimer.timeout.connect(self.playTick)
 
- 
-
-        controlFrame = QFrame()
-        controlLayout = QHBoxLayout()
-        self.area_box =RangeBox("Area","Minimum Area: ","Maximum Area:",(1,10000),(1,10000)) # [2].value()
-        self.threshold_box =RangeBox("Threshold","Minimum Threshold: ","Maximum Threshold:",(0,255),(0,255),False)
-        self.circul_dial = RangeDial("Circularity",(1,100))
-        self.convex_dial = RangeDial("Convexity",(1,100))
-        self.inertia_dial = RangeDial("Inertia",(1,100))
-
-
-
-        controlLayout.addWidget(self.area_box)
-        controlLayout.addWidget(self.threshold_box)
-        controlLayout.addWidget(self.circul_dial)
-        controlLayout.addWidget(self.convex_dial)
-        controlLayout.addWidget(self.inertia_dial)
-        #controlLayout.addWidget()
         
-        controlFrame.setLayout(controlLayout)
+
+
+
+
+        ## Simple Blob Detection
+
+
+        # controlFrame = QFrame()
+        # controlLayout = QHBoxLayout()
+        # self.area_box = RangeBox("Area","Minimum Area: ","Maximum Area:",(1,10000),(1,10000)) # [2].value()
+        # self.threshold_box = RangeBox("Threshold","Minimum Threshold: ","Maximum Threshold:",(0,255),(0,255),False)
+        # self.circul_dial = RangeDial("Circularity",(1,100))
+        # self.convex_dial = RangeDial("Convexity",(1,100))
+        # self.inertia_dial = RangeDial("Inertia",(1,100))
+
+        # controlLayout.addWidget(self.area_box)
+        # controlLayout.addWidget(self.threshold_box)
+        # controlLayout.addWidget(self.circul_dial)
+        # controlLayout.addWidget(self.convex_dial)
+        # controlLayout.addWidget(self.inertia_dial)
+
+        # controlFrame.setLayout(controlLayout)
        
-        # btn1.clicked.connect(run_camThread)
+
+
+        ## Image Processing Frame
         imageProcessingLayout = QGridLayout()
         imageProcessingFrame = QFrame()
         imageProcessingFrame.setLayout(imageProcessingLayout)
+        
+
+        ## Blur Slider
 
         blurLabel = QLabel("Blur : ")
-        
         blurSlider = QSlider()
         blurSlider.setMinimum(0)
         blurSlider.setMaximum(20)
         blurSlider.setTickInterval(2)
         blurSlider.setOrientation(Qt.Horizontal)
         blurSlider.setSingleStep(2)
-
-        
-       
-
         blurSlider.valueChanged.connect(self.videoThread.set_blur)
-        
-        imageProcessingLayout.addWidget(blurLabel,0,0)
-        imageProcessingLayout.addWidget(blurSlider,0,1)
 
+
+
+        ## Rotate Button
         rotateBtn = QPushButton("Rotate")
         rotateBtn.setMaximumWidth(100)
         rotateBtn.clicked.connect(self.videoThread.set_rotate)
+
+
         
 
-        contourSlider = QSlider()
-        contourSlider.setMinimum(0)
-        contourSlider.setMaximum(255)
-        contourSlider.setTickInterval(1) 
+        ## Test Slider
+        # contourSlider = QSlider()
+        # contourSlider.setMinimum(0)
+        # contourSlider.setMaximum(255)
+        # contourSlider.setTickInterval(1) 
+        # contourSlider.setOrientation(Qt.Horizontal)
+        # contourSlider.valueChanged.connect(self.videoThread.set_canny)
+        # contourLabel = QLabel("Contour : ")
+        # imageProcessingFrame.layout().addWidget(contourLabel,1,0)
 
-        contourSlider.setOrientation(Qt.Horizontal)
 
-        contourSlider.valueChanged.connect(self.videoThread.set_canny)
-
-        contourLabel = QLabel("Contour : ")
-    
-
-        imageProcessingFrame.layout().addWidget(contourLabel,1,0)
-        imageProcessingLayout.addWidget(contourSlider,1,1)
+        # imageProcessingLayout.addWidget(contourSlider,1,1)
+        imageProcessingLayout.addWidget(blurLabel,0,0)
+        imageProcessingLayout.addWidget(blurSlider,0,1)
         imageProcessingLayout.addWidget(rotateBtn,2,0) 
         
+        
 
-        pg.setConfigOption('background', 'w')
+        
         self.scatter_graph = pg.PlotWidget()
         #self.plot = self.graph.plot()
         self.scatter = pg.ScatterPlotItem(pen=pg.mkPen(width=5, color='r'), symbol='o', size=25)
@@ -172,11 +171,8 @@ class MainWindow(QMainWindow):
 
         # Error Frame
 
-        
-        
         self.errorBox = QLabel(self.errorMsg)
-        #
-        # errorBox.setStyleSheet("color: red;")
+        # self.errorBox.setStyleSheet("color: red;")
 
         errorFrame = QFrame()
         errorFrame.setObjectName("errorFrame")
@@ -285,16 +281,6 @@ class MainWindow(QMainWindow):
 
         # self.audioThread.voice_data.connect(self.update_voice_recorder)
         
-  
-        # try:
-        #     self.videoThread.start()
-        # except:
-        #     self.videoThread.stop()
-        #     retryBtn = QPushButton("Retry Connection")
-        #     retryBtn.clicked.connect(self.retryConnection)
-        #     self.mainLayout.addWidget(retryBtn, 0, 0)
-
-   
         self.pulse_data = [0]
         self.pulse_timestamps = []
     
@@ -510,6 +496,7 @@ class MainWindow(QMainWindow):
 if __name__ == "__main__":
         
     app = QApplication(sys.argv)
+
     window = MainWindow()
     window.show()
 
