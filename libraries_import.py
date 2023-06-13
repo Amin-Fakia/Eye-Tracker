@@ -21,5 +21,5 @@ import threading
 import csv
 from serial import Serial
 import os
-from tensorflow.python.keras.models import load_model
+#from tensorflow.python.keras.models import load_model
 from API import LiteModel

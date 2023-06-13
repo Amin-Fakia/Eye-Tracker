@@ -18,7 +18,8 @@ class VideoThread(QThread):
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
     ellipse = ((0, 0), (0, 0), 0)
     filename="test"
-    frame_width,frame_height = 0,0
+    frame_width,frame_height = 0,0#
+    circularity_thresh = 0
     def __init__(self) -> None:
         super(VideoThread,self).__init__()
         self._isRunning = True
@@ -30,7 +31,8 @@ class VideoThread(QThread):
         self.record = not self.record
         if self.record == True:
             self.out = cv2.VideoWriter("./data/"+ filename+ "/Video/" + filename +".avi",cv2.VideoWriter_fourcc('M','J','P','G'), 30, (self.frame_width,self.frame_height))
-
+    def update_circularity(self,value):
+        self.circularity_thresh = value
     def fitPupil(self,image):
         temp_image = image.copy()
         image_gray = cv2.cvtColor(temp_image , cv2.COLOR_BGR2GRAY)
@@ -42,8 +44,16 @@ class VideoThread(QThread):
         temp_image  = 255 - closing
         contours, hierarchy = cv2.findContours(temp_image , cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         hull = []
-        for i in range(len(contours)):
-            hull.append(cv2.convexHull(contours[i], False))
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            perimeter = cv2.arcLength(contour, True)
+            circularity = 4 * np.pi * (area / (perimeter * perimeter))
+
+            
+            if circularity > self.circularity_thresh:
+                hull.append(cv2.convexHull(contour, False))
+        # for i in range(len(contours)):
+        #     hull.append(cv2.convexHull(contours[i], False))
         cnt = sorted(hull, key=cv2.contourArea)
         return cnt
         
