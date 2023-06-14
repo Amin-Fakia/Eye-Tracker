@@ -6,6 +6,10 @@ from UI import *
 class MainWindow(QMainWindow):
     filepath = "/data/"
     pg.setConfigOption('background', 'w')
+    def update_circularity(self):
+        v = self.circularitySlider.value()
+        self.videoThread.update_circularity(v)
+        self.sliderLabel.setText(str(v))
     def __init__(self):
         start = time.perf_counter()
         super().__init__()
@@ -58,8 +62,31 @@ class MainWindow(QMainWindow):
         # controlLayout.addWidget(self.inertia_dial)
 
         # controlFrame.setLayout(controlLayout)
+<<<<<<< HEAD
        
        
+=======
+
+        # Image Processing Detector
+
+        controlFrame = QFrame()
+        controlLayout = QHBoxLayout()
+        controlFrame.setLayout(controlLayout)
+
+        self.sliderLabel = QLabel("0")
+        self.sliderLabel.setMinimumWidth(30)
+        self.sliderLabel.setAlignment(Qt.AlignmentFlag.AlignCenter |
+                                Qt.AlignmentFlag.AlignVCenter)
+        
+        self.circularitySlider = QSlider(Qt.Horizontal)
+        self.circularitySlider.valueChanged.connect(self.update_circularity)
+
+        controlLayout.addWidget(self.circularitySlider)
+        controlLayout.addWidget(self.sliderLabel)
+        
+        
+
+>>>>>>> 10e367fb66549f9524840ba1b5ad39e11c0bc847
         ## Image Processing Frame
         imageProcessingLayout = QGridLayout()
         imageProcessingFrame = QFrame()
@@ -130,7 +157,9 @@ class MainWindow(QMainWindow):
         self.time_stamps = []
 
 
-        #tabs.addTab(controlFrame, "Blob Detection Parameters")
+
+
+        tabs.addTab(controlFrame, "Configure DA")
         tabs.addTab(self.graph, "Pupil Diameter Plot")
         tabs.addTab(self.scatter_graph, "Pupil Position Plot")
         tabs.addTab(imageProcessingFrame, "Image Processing")
