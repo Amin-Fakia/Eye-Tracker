@@ -159,6 +159,8 @@ class VideoThread(QThread):
                         cv2.circle(processed_img,tuple(map(int,self.ellipse[0])),1,(255,255,0),1)
                     except:
                         pass
+
+                ## Simple Frame Counter to detect blinks
                 else:
                     idx+=1
                     if idx>2:

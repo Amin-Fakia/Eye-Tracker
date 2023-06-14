@@ -7,6 +7,7 @@ class MainWindow(QMainWindow):
     filepath = "/data/"
     pg.setConfigOption('background', 'w')
     def __init__(self):
+        start = time.perf_counter()
         super().__init__()
         self.setWindowTitle("Eye Tracker")
         self.setWindowIcon(QIcon("./Icons/Eye_Tracker_Icon.png"))
@@ -58,8 +59,7 @@ class MainWindow(QMainWindow):
 
         # controlFrame.setLayout(controlLayout)
        
-
-
+       
         ## Image Processing Frame
         imageProcessingLayout = QGridLayout()
         imageProcessingFrame = QFrame()
@@ -230,6 +230,8 @@ class MainWindow(QMainWindow):
         self.tableWidget.setRowCount(5)
         self.tableWidget.setVerticalHeaderLabels(["X","Y","Pupil Radius Change (%)","Heart Rate (BPM)","Blinks"])
 
+        
+
 
 
 
@@ -283,6 +285,7 @@ class MainWindow(QMainWindow):
         
         self.pulse_data = [0]
         self.pulse_timestamps = []
+        
 
         #self.initialize_gui()
     
