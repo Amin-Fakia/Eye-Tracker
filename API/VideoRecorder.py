@@ -20,11 +20,16 @@ class VideoThread(QThread):
     filename="test"
     frame_width,frame_height = 0,0#
     circularity_thresh = 0
+    r = None
     def __init__(self) -> None:
         super(VideoThread,self).__init__()
         self._isRunning = True
         #model = load_model("./NN/eyecloseopen.h5")
         # self.lmodel =  LiteModel.from_file("./NN/model.tflite")#LiteModel.from_keras_model(model) 
+
+    def adjust_box(self,x,y,image):
+        pass
+
 
     def toggleRecording(self,filename="test"):
         
@@ -37,7 +42,7 @@ class VideoThread(QThread):
         temp_image = image.copy()
         image_gray = cv2.cvtColor(temp_image , cv2.COLOR_BGR2GRAY)
         blur = cv2.GaussianBlur(image_gray,(3,3),0)
-        ret,thresh1 = cv2.threshold(blur,70,255,cv2.THRESH_BINARY)
+        ret,thresh1 = cv2.threshold(blur,60,255,cv2.THRESH_BINARY)
         opening = cv2.morphologyEx(thresh1, cv2.MORPH_OPEN, self.kernel)
         closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, self.kernel)
 
@@ -68,7 +73,9 @@ class VideoThread(QThread):
         cv2.drawContours(img, contours, -1, (0, 255, 0), 3)
 
     
-
+    def crop_img(self):
+        self.r = cv2.selectROI("select the area", self.img)
+         
     def run(self):
         # capture from web cam
         #file_path = "C:/Users/ameen/Desktop/Git_Master/Master/Software Eyetracker/outpy.avi"
@@ -92,14 +99,19 @@ class VideoThread(QThread):
             
             
             
+            
             if ret:
                 #new_frame_time = time.time()
                 #self.img = cv2.rotate(self.img, cv2.ROTATE_90_COUNTERCLOCKWISE)
                 # if self.rotate_index:
-                self.img = self.img[:,0:200]
+                self.img = self.img[:,50:280]
+                if self.r is not None:
+                    self.img = self.img[int(self.r[1]):int(self.r[1]+self.r[3]), 
+                      int(self.r[0]):int(self.r[0]+self.r[2])]
                 #self.img = cv2.resize(self.img,(500,500))
 
                 
+
                 if not ret:
                     break
                 for _ in range(self.rotate_index):

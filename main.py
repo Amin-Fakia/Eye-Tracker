@@ -206,6 +206,7 @@ class MainWindow(QMainWindow):
         errorFrame.setLayout(errorBoxLayout)
 
         
+        
 
 
         
@@ -401,6 +402,7 @@ class MainWindow(QMainWindow):
         # @pyqtSlot(tuple)
     def calibrate(self):
         #for d in data:
+        self.videoThread.crop_img()
         self.pupil_radius = self.pupil_radius_
     def calculate_perimeter(self,a,b):
         perimeter = math.pi * ( 3*(a+b) - math.sqrt( (3*a + b) * (a + 3*b) ) )
