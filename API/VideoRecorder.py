@@ -3,6 +3,7 @@ from libraries_import import *
 ## Video Capture / Image processing, potentially TODO: seperate image processing and video capture
 class VideoThread(QThread):
     change_pixmap_signal = pyqtSignal(np.ndarray)
+    original_pixmap_signal = pyqtSignal(np.ndarray)
     keypoints = pyqtSignal(tuple)
     record = False
     detector = cv2.SimpleBlobDetector_create()
@@ -20,6 +21,7 @@ class VideoThread(QThread):
     filename="test"
     frame_width,frame_height = 0,0#
     circularity_thresh = 0
+    thresh_value = 60
     r = None
     def __init__(self) -> None:
         super(VideoThread,self).__init__()
@@ -29,7 +31,10 @@ class VideoThread(QThread):
 
     def adjust_box(self,x,y,image):
         pass
+    
 
+    def update_thresh(self,value):
+        self.thresh_value = value
 
     def toggleRecording(self,filename="test"):
         
@@ -37,12 +42,12 @@ class VideoThread(QThread):
         if self.record == True:
             self.out = cv2.VideoWriter("./data/"+ filename+ "/Video/" + filename +".avi",cv2.VideoWriter_fourcc('M','J','P','G'), 30, (self.frame_width,self.frame_height))
     def update_circularity(self,value):
-        self.circularity_thresh = value
-    def fitPupil(self,image):
+        self.circularity_thresh = value/100
+    def fitPupil(self,image,thresh_val=60):
         temp_image = image.copy()
         image_gray = cv2.cvtColor(temp_image , cv2.COLOR_BGR2GRAY)
         blur = cv2.GaussianBlur(image_gray,(3,3),0)
-        ret,thresh1 = cv2.threshold(blur,60,255,cv2.THRESH_BINARY)
+        ret,thresh1 = cv2.threshold(blur,thresh_val,255,cv2.THRESH_BINARY)
         opening = cv2.morphologyEx(thresh1, cv2.MORPH_OPEN, self.kernel)
         closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, self.kernel)
 
@@ -92,10 +97,10 @@ class VideoThread(QThread):
          # fourcc, cv2.VideoWriter_fourcc('M','J','P','G')
         idx = 0
         while self._isRunning:
-            ret, self.img = cap.read()
+            ret, self.original_img = cap.read()
             
             if self.record:
-                self.out.write(self.img)
+                self.out.write(self.original_img)
             
             
             
@@ -104,7 +109,8 @@ class VideoThread(QThread):
                 #new_frame_time = time.time()
                 #self.img = cv2.rotate(self.img, cv2.ROTATE_90_COUNTERCLOCKWISE)
                 # if self.rotate_index:
-                self.img = self.img[:,50:280]
+                self.img = self.original_img[:,50:280]
+                
                 if self.r is not None:
                     self.img = self.img[int(self.r[1]):int(self.r[1]+self.r[3]), 
                       int(self.r[0]):int(self.r[0]+self.r[2])]
@@ -171,7 +177,7 @@ class VideoThread(QThread):
 
 
                 processed_img = self.img.copy()
-                cnt = self.fitPupil(processed_img)
+                cnt = self.fitPupil(processed_img,self.thresh_value)
 
                 if cnt:
                     maxcnt = cnt[-1]
@@ -191,6 +197,7 @@ class VideoThread(QThread):
                 
                 #self.change_pixmap_signal.emit(processed_img)
                 self.change_pixmap_signal.emit(processed_img)
+                self.original_pixmap_signal.emit(self.original_img)
                 self.keypoints.emit(self.ellipse)
                 self.blink_count.emit(self.blinkCount)
                 # prev_frame_time = new_frame_time

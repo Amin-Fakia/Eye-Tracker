@@ -10,6 +10,7 @@ class MainWindow(QMainWindow):
         v = self.circularitySlider.value()
         self.videoThread.update_circularity(v)
         self.sliderLabel.setText(str(v))
+    
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Eye Tracker")
@@ -64,9 +65,9 @@ class MainWindow(QMainWindow):
 
         # Image Processing Detector
 
-        controlFrame = QFrame()
-        controlLayout = QHBoxLayout()
-        controlFrame.setLayout(controlLayout)
+        # controlFrame = QFrame()
+        # controlLayout = QHBoxLayout()
+        # controlFrame.setLayout(controlLayout)
 
         self.sliderLabel = QLabel("0")
         self.sliderLabel.setMinimumWidth(30)
@@ -76,8 +77,24 @@ class MainWindow(QMainWindow):
         self.circularitySlider = QSlider(Qt.Horizontal)
         self.circularitySlider.valueChanged.connect(self.update_circularity)
 
-        controlLayout.addWidget(self.circularitySlider)
-        controlLayout.addWidget(self.sliderLabel)
+        sliderText = QLabel("Circularity")
+
+        
+        self.binaryText = QLabel("Binary Threshold")
+        self.binaryThresh = QSlider(Qt.Horizontal)
+        self.binaryThresh.setMinimum(0)
+        self.binaryThresh.setMaximum(255)
+        self.binaryThresh.setValue(60)
+        self.binaryLabel = QLabel("60")
+
+        self.binaryThresh.valueChanged.connect(self.update_thresh)
+
+
+
+
+        # controlLayout.addWidget(self.sliderText)
+        # controlLayout.addWidget(self.circularitySlider)
+        # controlLayout.addWidget(self.sliderLabel)
         
         
 
@@ -89,14 +106,16 @@ class MainWindow(QMainWindow):
 
         ## Blur Slider
 
-        blurLabel = QLabel("Blur : ")
+        blurText = QLabel("Blur : ")
         blurSlider = QSlider()
         blurSlider.setMinimum(0)
         blurSlider.setMaximum(20)
         blurSlider.setTickInterval(2)
         blurSlider.setOrientation(Qt.Horizontal)
         blurSlider.setSingleStep(2)
-        blurSlider.valueChanged.connect(self.videoThread.set_blur)
+        blurSlider.valueChanged.connect(self.update_blur)
+        self.blurLabel = QLabel("0")
+
 
 
 
@@ -120,9 +139,25 @@ class MainWindow(QMainWindow):
 
 
         # imageProcessingLayout.addWidget(contourSlider,1,1)
-        imageProcessingLayout.addWidget(blurLabel,0,0)
-        imageProcessingLayout.addWidget(blurSlider,0,1)
-        imageProcessingLayout.addWidget(rotateBtn,2,0) 
+
+
+        imageProcessingLayout.addWidget(sliderText,0,0)
+        imageProcessingLayout.addWidget(self.circularitySlider,0,1)
+        imageProcessingLayout.addWidget(self.sliderLabel,0,2)
+
+        imageProcessingLayout.addWidget(self.binaryText,1,0)
+        imageProcessingLayout.addWidget(self.binaryThresh,1,1)
+        imageProcessingLayout.addWidget(self.binaryLabel,1,2)
+        
+        
+        imageProcessingLayout.addWidget(blurText,2,0)
+        imageProcessingLayout.addWidget(blurSlider,2,1)
+        imageProcessingLayout.addWidget(self.blurLabel,2,2)
+        
+
+
+        imageProcessingLayout.addWidget(rotateBtn,3,1)
+
         
         
 
@@ -153,7 +188,7 @@ class MainWindow(QMainWindow):
 
 
 
-        tabs.addTab(controlFrame, "Configure DA")
+        #tabs.addTab(controlFrame, "Configure DA")
         tabs.addTab(self.graph, "Pupil Diameter Plot")
         tabs.addTab(self.scatter_graph, "Pupil Position Plot")
         tabs.addTab(imageProcessingFrame, "Image Processing")
@@ -162,13 +197,18 @@ class MainWindow(QMainWindow):
 
         self.image_1_label = QLabel()
         # change
-        self.image_1_label.setScaledContents(False)
-        #self.image_2_label = QLabel()
+        #self.image_1_label.setFixedSize(400,400)
+        self.image_1_label.setScaledContents(True)
+
+        self.image_2_label = QLabel()
+        #self.image_2_label.setFixedSize(400,400)
+
+        self.image_2_label.setScaledContents(True)
 
 
 
         self.mainLayout.addWidget(self.image_1_label, 0, 0)
-        #self.mainLayout.addWidget(self.image_2_label, 0, 1)
+        self.mainLayout.addWidget(self.image_2_label, 0, 1)
 
         
         ## Input Frame
@@ -289,7 +329,8 @@ class MainWindow(QMainWindow):
         
        
         # connect its signal to the update_image slot
-        self.videoThread.change_pixmap_signal.connect(self.update_image)
+        self.videoThread.change_pixmap_signal.connect(self.update_image_2)
+        self.videoThread.original_pixmap_signal.connect(self.update_image_1)
         self.videoThread.keypoints.connect(self.update_data)
         self.videoThread.keypoints.connect(self.update_scatter_graph)
         self.videoThread.keypoints.connect(self.update_plot)
@@ -310,6 +351,14 @@ class MainWindow(QMainWindow):
 
         #self.initialize_gui()
     
+    def update_blur(self,val):
+        self.videoThread.set_blur(val)
+        self.blurLabel.setText(str(val))
+
+    def update_thresh(self,val):
+        
+        self.binaryLabel.setText(str(val))
+        self.videoThread.update_thresh(val)
     
 
     def createFolder(self):
@@ -402,7 +451,7 @@ class MainWindow(QMainWindow):
         # @pyqtSlot(tuple)
     def calibrate(self):
         #for d in data:
-        self.videoThread.crop_img()
+        #self.videoThread.crop_img()
         self.pupil_radius = self.pupil_radius_
     def calculate_perimeter(self,a,b):
         perimeter = math.pi * ( 3*(a+b) - math.sqrt( (3*a + b) * (a + 3*b) ) )
@@ -500,14 +549,22 @@ class MainWindow(QMainWindow):
             self.dataY.pop(0)
             self.r.pop(0)
         xys.append((x,y))
-     
+
+
+
+ 
 
     @pyqtSlot(np.ndarray)
-    def update_image(self, cv_img):
+    def update_image_1(self, cv_img):
         """Updates the image_label with a new opencv image"""
    
         qt_img = self.convert_cv_qt(cv_img)
         self.image_1_label.setPixmap(qt_img)
+    @pyqtSlot(np.ndarray)
+    def update_image_2(self, cv_img):
+        """Updates the image_label with a new opencv image"""
+        qt_img = self.convert_cv_qt(cv_img)
+        self.image_2_label.setPixmap(qt_img)
     
     def convert_cv_qt(self, cv_img):
         """Convert from an opencv image to QPixmap"""
