@@ -12,6 +12,7 @@ class MainWindow(QMainWindow):
         self.sliderLabel.setText(str(v))
     
     def __init__(self):
+        start = time.perf_counter()
         super().__init__()
         self.setWindowTitle("Eye Tracker")
         self.setWindowIcon(QIcon("./Icons/Eye_Tracker_Icon.png"))
@@ -62,6 +63,10 @@ class MainWindow(QMainWindow):
         # controlLayout.addWidget(self.inertia_dial)
 
         # controlFrame.setLayout(controlLayout)
+<<<<<<< HEAD
+       
+       
+=======
 
         # Image Processing Detector
 
@@ -98,6 +103,7 @@ class MainWindow(QMainWindow):
         
         
 
+>>>>>>> 10e367fb66549f9524840ba1b5ad39e11c0bc847
         ## Image Processing Frame
         imageProcessingLayout = QGridLayout()
         imageProcessingFrame = QFrame()
@@ -294,6 +300,8 @@ class MainWindow(QMainWindow):
         self.tableWidget.setRowCount(5)
         self.tableWidget.setVerticalHeaderLabels(["X","Y","Pupil Radius Change (%)","Heart Rate (BPM)","Blinks"])
 
+        
+
 
 
 
@@ -348,6 +356,7 @@ class MainWindow(QMainWindow):
         
         self.pulse_data = [0]
         self.pulse_timestamps = []
+        
 
         #self.initialize_gui()
     
