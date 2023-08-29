@@ -40,7 +40,8 @@ class VideoThread(QThread):
         
         self.record = not self.record
         if self.record == True:
-            self.out = cv2.VideoWriter("./data/"+ filename+ "/Video/" + filename +".avi",cv2.VideoWriter_fourcc('M','J','P','G'), 30, (self.frame_width,self.frame_height))
+            #'M','J','P','G'
+            self.out = cv2.VideoWriter("./data/"+ filename+ "/Video/" + filename +".avi",cv2.VideoWriter_fourcc(*'MJPG'), 24, (self.frame_width,self.frame_height))
     def update_circularity(self,value):
         self.circularity_thresh = value/100
     def fitPupil(self,image,thresh_val=60):
@@ -50,6 +51,7 @@ class VideoThread(QThread):
         ret,thresh1 = cv2.threshold(blur,thresh_val,255,cv2.THRESH_BINARY)
         opening = cv2.morphologyEx(thresh1, cv2.MORPH_OPEN, self.kernel)
         closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, self.kernel)
+       
 
         temp_image  = 255 - closing
         contours, hierarchy = cv2.findContours(temp_image , cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
@@ -79,7 +81,16 @@ class VideoThread(QThread):
 
     
     def crop_img(self):
-        self.r = cv2.selectROI("select the area", self.img)
+        self.img = self.original_img
+        
+        self.img = cv2.putText(self.img,"Press C to cancel",(25,25),cv2.FONT_HERSHEY_SIMPLEX,1,(255,0,0),1,cv2.LINE_AA)
+        
+        self.r = cv2.selectROI("select", self.img,False)
+        
+
+        if self.r == (0,0,0,0):
+            self.r=None
+        cv2.destroyWindow("select")
          
     def run(self):
         # capture from web cam
@@ -98,6 +109,7 @@ class VideoThread(QThread):
         idx = 0
         while self._isRunning:
             ret, self.original_img = cap.read()
+            self.original_img = cv2.rotate(self.original_img, cv2.ROTATE_90_COUNTERCLOCKWISE)
             
             if self.record:
                 self.out.write(self.original_img)
@@ -109,7 +121,7 @@ class VideoThread(QThread):
                 #new_frame_time = time.time()
                 #self.img = cv2.rotate(self.img, cv2.ROTATE_90_COUNTERCLOCKWISE)
                 # if self.rotate_index:
-                self.img = self.original_img[:,50:280]
+                self.img = self.original_img
                 
                 if self.r is not None:
                     self.img = self.img[int(self.r[1]):int(self.r[1]+self.r[3]), 
@@ -149,22 +161,26 @@ class VideoThread(QThread):
                 except: pass
 
 
+                processed_img = self.img.copy()
+
+
                 # Pupil Detection using Blob Detector #
 
-                # keyPoints = self.detector.detect(self.img)
-              
+                # keyPoints = self.detector.detect(processed_img)
+                
                 # if keyPoints:
                 #     keyPoints_temp = keyPoints
-                #     self.blobs = cv2.drawKeypoints(self.img, keyPoints, self.blank, (255, 0, 255),
+                #     self.blobs = cv2.drawKeypoints(processed_img , keyPoints, processed_img, (255, 0, 255),
                 #                     cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-                #     cv2.line(self.blobs,(int(keyPoints[0].pt[0]),0),(int(keyPoints[0].pt[0]),int(self.img.shape[0])),(255,255,255),1)
-                #     cv2.line(self.blobs,(0,int(keyPoints[0].pt[1])),(int(self.img.shape[1]),int(keyPoints[0].pt[1])),(255,255,255),1)
+                #     cv2.line(self.blobs,(int(keyPoints[0].pt[0]),0),(int(keyPoints[0].pt[0]),int(processed_img .shape[0])),(255,255,255),1)
+                #     cv2.line(self.blobs,(0,int(keyPoints[0].pt[1])),(int(processed_img .shape[1]),int(keyPoints[0].pt[1])),(255,255,255),1)
+                #     #print(self.blobs)
                 # else:
                 #     try:
-                #         self.blobs = cv2.drawKeypoints(self.img, keyPoints_temp, self.blank, (255, 0, 255),
+                #         self.blobs = cv2.drawKeypoints(processed_img , keyPoints_temp, self.blank, (255, 0, 255),
                 #                         cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-                #         cv2.line(self.blobs,(int(keyPoints_temp[0].pt[0]),0),(int(keyPoints_temp[0].pt[0]),int(self.img.shape[0])),(255,255,255),1)
-                #         cv2.line(self.blobs,(0,int(keyPoints_temp[0].pt[1])),(int(self.img.shape[1]),int(keyPoints_temp[0].pt[1])),(255,255,255),1)
+                #         cv2.line(self.blobs,(int(keyPoints_temp[0].pt[0]),0),(int(keyPoints_temp[0].pt[0]),int(processed_img .shape[0])),(255,255,255),1)
+                #         cv2.line(self.blobs,(0,int(keyPoints_temp[0].pt[1])),(int(processed_img .shape[1]),int(keyPoints_temp[0].pt[1])),(255,255,255),1)
                 #     except: pass
                 # print(keyPoints)
 
@@ -176,7 +192,8 @@ class VideoThread(QThread):
                 # except: pass
 
 
-                processed_img = self.img.copy()
+                # Image Processing Pupil Fitting #
+
                 cnt = self.fitPupil(processed_img,self.thresh_value)
 
                 if cnt:
@@ -191,7 +208,7 @@ class VideoThread(QThread):
                 ## Simple Frame Counter to detect blinks
                 else:
                     idx+=1
-                    if idx>2:
+                    if idx>3:
                         self.blinkCount+=1
                         idx=0
                 

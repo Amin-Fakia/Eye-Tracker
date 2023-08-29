@@ -63,10 +63,6 @@ class MainWindow(QMainWindow):
         # controlLayout.addWidget(self.inertia_dial)
 
         # controlFrame.setLayout(controlLayout)
-<<<<<<< HEAD
-       
-       
-=======
 
         # Image Processing Detector
 
@@ -81,6 +77,9 @@ class MainWindow(QMainWindow):
         
         self.circularitySlider = QSlider(Qt.Horizontal)
         self.circularitySlider.valueChanged.connect(self.update_circularity)
+        self.circularitySlider.setValue(40)
+        self.videoThread.update_circularity(40)
+        
 
         sliderText = QLabel("Circularity")
 
@@ -103,7 +102,7 @@ class MainWindow(QMainWindow):
         
         
 
->>>>>>> 10e367fb66549f9524840ba1b5ad39e11c0bc847
+
         ## Image Processing Frame
         imageProcessingLayout = QGridLayout()
         imageProcessingFrame = QFrame()
@@ -195,9 +194,10 @@ class MainWindow(QMainWindow):
 
 
         #tabs.addTab(controlFrame, "Configure DA")
+        tabs.addTab(imageProcessingFrame, "Image Processing")
         tabs.addTab(self.graph, "Pupil Diameter Plot")
         tabs.addTab(self.scatter_graph, "Pupil Position Plot")
-        tabs.addTab(imageProcessingFrame, "Image Processing")
+        
         tabs.addTab(self.voice_recorder_graph, "Voice Recorder Plot")
         tabs.addTab(self.pulse_graph_widget, "Pulse Plot")
 
@@ -411,6 +411,8 @@ class MainWindow(QMainWindow):
         #print("Stopped at : " + self.time.toString("hh:mm:ss"))
         self.playBtn.setDisabled(False)
         self.stopBtn.setDisabled(True)
+        #self.blink_count = 0
+        self.videoThread.blinkCount = 0
         # self.popUp = MyPopup()
         # self.popUp.setGeometry(QRect(100, 100, 300, 100))
         # self.popUp.show()
@@ -460,8 +462,9 @@ class MainWindow(QMainWindow):
         # @pyqtSlot(tuple)
     def calibrate(self):
         #for d in data:
-        #self.videoThread.crop_img()
+        self.videoThread.crop_img()
         self.pupil_radius = self.pupil_radius_
+        self.videoThread.blinkCount = 0
     def calculate_perimeter(self,a,b):
         perimeter = math.pi * ( 3*(a+b) - math.sqrt( (3*a + b) * (a + 3*b) ) )
         return perimeter
@@ -493,6 +496,7 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot(int)
     def update_blink_count(self,blink_count):
+        self.blink_count = blink_count
         self.tableWidget.setItem(4,0,QTableWidgetItem(f"{blink_count}"))
 
         
